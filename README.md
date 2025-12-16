@@ -1,14 +1,14 @@
-# 🛡️ Pentest-Desktop
+# 🛡️ Rootless
 
 **A secure, sandboxed, cross-platform pentesting desktop console**
 
-Pentest-Desktop is a **security-first desktop application** that lets you run common pentesting tools like **Nmap** in **isolated environments**, without virtual machines, without package conflicts, and without unsafe sudo usage.
+Rootless is a **security-first desktop application** that lets you run common pentesting tools like **Nmap** in **isolated environments**, without virtual machines, without package conflicts, and without unsafe sudo usage.
 
 **One install → one UI → isolated tools → live output.**
 
 ---
 
-## ✨ Why Pentest-Desktop?
+## ✨ Why Rootless?
 
 Traditional pentesting setups are painful and fragile:
 
@@ -18,7 +18,7 @@ Traditional pentesting setups are painful and fragile:
 * `sudo` everywhere is dangerous
 * Switching between terminals kills focus
 
-Pentest-Desktop fixes this by:
+Rootless fixes this by:
 
 * Running tools in **OS-level sandboxes**
 * Keeping the **UI completely unprivileged**
@@ -30,7 +30,7 @@ Pentest-Desktop fixes this by:
 
 ## 🧠 Architecture Overview
 
-Pentest-Desktop uses a **layered, least-privilege architecture**.
+Rootless uses a **layered, least-privilege architecture**.
 ![alt text](image.png)
 
 ```
@@ -81,7 +81,7 @@ Live stdout/stderr streamed back to UI
 
 ## 🌐 Network Intelligence Panel
 
-Pentest-Desktop includes a **built-in network awareness panel**.
+Rootless includes a **built-in network awareness panel**.
 
 ![alt text](image-1.png)
 
@@ -128,7 +128,7 @@ Users simply:
 3. Enter a target
 4. Click **Run**
 
-Pentest-Desktop automatically:
+Rootless automatically:
 
 * Chooses safe flags
 * Selects the correct sandbox profile
@@ -153,7 +153,7 @@ The UI shows **exactly what the tool prints**, as it happens.
 
 ## 🔐 Security Model
 
-Pentest-Desktop follows **least privilege by default**.
+Rootless follows **least privilege by default**.
 
 * Renderer process cannot execute commands
 * Orchestrator only accepts known tools
@@ -188,7 +188,7 @@ A compromised UI **does not** equal system compromise.
 
 ## 🚧 Project Status
 
-Pentest-Desktop is **actively developed**.
+Rootless is **actively developed**.
 
 Current focus:
 
