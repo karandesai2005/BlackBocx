@@ -31,8 +31,8 @@ async function loadTools() {
 
   Object.keys(tools).forEach(category => {
     const catLabel = document.createElement("div");
-    catLabel.textContent = `🔹 ${category}`;
-    catLabel.style.margin = "10px 0 6px";
+    catLabel.textContent = `📂 ${category}`;
+    catLabel.className = "category-label";
     toolsListEl.appendChild(catLabel);
 
     tools[category].forEach(t => {
@@ -40,12 +40,10 @@ async function loadTools() {
 
       const item = document.createElement("div");
       item.className = "tool-item";
-      item.textContent = t.name + " (" + t.id + ")";
+      item.textContent = t.name;
 
       item.onclick = () => {
-        document
-          .querySelectorAll(".tool-item")
-          .forEach(x => x.classList.remove("active"));
+        document.querySelectorAll(".tool-item").forEach(x => x.classList.remove("active"));
         item.classList.add("active");
         selectTool(t);
       };
@@ -55,7 +53,7 @@ async function loadTools() {
   });
 }
 
-/* ------------------- Render Selected Tool ------------------- */
+/* ------------------- Parse Command Placeholders ------------------- */
 
 function parsePlaceholders(str) {
   const out = [];
@@ -64,21 +62,36 @@ function parsePlaceholders(str) {
   let m;
   while ((m = re.exec(str)) !== null) out.push(m[1]);
 
+  // Always allow TARGET as default
   if (!out.includes("TARGET")) out.push("TARGET");
 
   return out;
 }
 
+/* ------------------- Render Selected Tool ------------------- */
+
 function selectTool(tool) {
   currentTool = tool;
+
   toolNameEl.textContent = `${tool.name} (${tool.id})`;
   inputsEl.innerHTML = "";
 
-  const source = tool.type === "system" ? tool.cmd : (tool.module || "");
-  const placeholders = parsePlaceholders(source);
+  // Tool description
+  if (tool.description) {
+    const desc = document.createElement("p");
+    desc.className = "tool-desc";
+    desc.textContent = tool.description;
+    inputsEl.appendChild(desc);
+  }
+
+  let placeholders = [];
+
+  if (tool.type === "system") placeholders = parsePlaceholders(tool.cmd);
+  else if (tool.type === "wasm") placeholders = ["TARGET"];
 
   placeholders.forEach(ph => {
     const div = document.createElement("div");
+    div.className = "input-row";
 
     const label = document.createElement("label");
     label.textContent = ph;

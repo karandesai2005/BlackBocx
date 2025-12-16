@@ -4,10 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import json
 import uvicorn
+import os
 
 app = FastAPI()
 
-# Enable CORS because Electron needs it
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,9 +15,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load tools.json
 def load_tools():
-    with open("tools.json") as f:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, "tools.json")
+    with open(path) as f:
         return json.load(f)
 
 TOOLS = load_tools()
@@ -29,53 +30,63 @@ def find_tool(tool_id: str):
                 return t
     return None
 
-
-# ★★★★★ THE HEART OF ROUTING ★★★★★
 @app.get("/stream")
 async def stream(tool: str, target: str):
-
     tool_info = find_tool(tool)
     if not tool_info:
         raise HTTPException(400, "Unknown tool")
 
-    # WASM tool
     if tool_info["type"] == "wasm":
         go_url = "http://127.0.0.1:9000/run-wasm"
         payload = {"module": tool_info["module"], "target": target}
-
-    # System tool
     elif tool_info["type"] == "system":
         go_url = "http://127.0.0.1:9000/run-system"
         cmd = tool_info["cmd"].replace("{TARGET}", target)
         payload = {"cmd": cmd}
-
     else:
         raise HTTPException(400, "Unsupported tool type")
 
-
-    # ★ STREAM PROXY TO GO SANDBOX ★
     async def stream_gen():
-        async with httpx.AsyncClient(timeout=None) as client:
+        # Use a new client for every request to ensure clean state
+        async with httpx.AsyncClient(timeout=60.0) as client:
             try:
-                async with client.stream("POST", go_url, json=payload) as resp:
+                # 1. Prepare Data Manually
+                json_str = json.dumps(payload)
+                json_bytes = json_str.encode("utf-8")
+                
+                print(f"🐍 PYTHON DEBUG: Sending {len(json_bytes)} bytes to Go: {json_str}")
 
-                    async for chunk in resp.aiter_text():
-                        if chunk.strip():
-                            yield f"{chunk}"
+                # 2. Build Request Explicitly (Bypassing client.stream helper)
+                request = client.build_request(
+                    "POST",
+                    go_url,
+                    content=json_bytes,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Content-Length": str(len(json_bytes)) # Force Content-Length
+                    }
+                )
 
+                # 3. Send and Stream Response
+                response = await client.send(request, stream=True)
+
+                async for chunk in response.aiter_text():
+                    if chunk.strip():
+                        yield chunk
+                
+                # Close the response stream
+                await response.aclose()
                 yield "data: DONE\n\n"
 
             except Exception as e:
+                print(f"🐍 PYTHON ERROR: {e}")
                 yield f"data: ERROR: {str(e)}\n\n"
 
-
     return StreamingResponse(stream_gen(), media_type="text/event-stream")
-
 
 @app.get("/tools")
 def get_tools():
     return TOOLS
-
 
 if __name__ == "__main__":
     print("🚀 Python orchestrator starting on http://127.0.0.1:8000")
